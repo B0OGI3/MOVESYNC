@@ -64,7 +64,3 @@ client/ — React + Vite SPA
 server/
   index.js  — Express + Socket.io, room store, chess.js validation
 ```
-
-## Resume Bullet
-
-> "Built MoveSync, a real-time multiplayer chess app with spectator mode, live emoji reactions, and in-game chat using Socket.io, React, and Node — game state managed server-side with room-based architecture supporting players and live spectators simultaneously"

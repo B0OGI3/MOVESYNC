@@ -50,10 +50,9 @@ export default function GamePage() {
   }, []);
 
   useEffect(() => {
-    socket.connect();
     setConnected(false);
 
-    socket.on('connect', () => {
+    function doJoin() {
       socket.emit('join-room', { roomId }, (res) => {
         if (res.error) { navigate('/'); return; }
         setMyColor(res.color);
@@ -62,7 +61,14 @@ export default function GamePage() {
         applyRoomUpdate(res);
         if (res.isGameOver) setGameOver(res.gameOverReason);
       });
-    });
+    }
+
+    if (socket.connected) {
+      doJoin();
+    } else {
+      socket.connect();
+      socket.on('connect', doJoin);
+    }
 
     socket.on('room-update', (data) => {
       applyRoomUpdate(data);
@@ -84,14 +90,13 @@ export default function GamePage() {
       setGameOver(null);
       setOpponentLeft(false);
       applyRoomUpdate(data);
-      // color swap: if server swapped roles, re-fetch our color
       socket.emit('join-room', { roomId }, (res) => {
         if (!res.error) setMyColor(res.color);
       });
     });
 
     return () => {
-      socket.off('connect');
+      socket.off('connect', doJoin);
       socket.off('room-update');
       socket.off('game-over');
       socket.off('player-disconnected');

@@ -36,7 +36,12 @@ export default function GamePage() {
   const [opponentLeft, setOpponentLeft] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
   const reactionTimers = useRef({});
-  const nickname = localStorage.getItem('movesync_nickname') || '';
+
+  const [nickname, setNickname] = useState(localStorage.getItem('movesync_nickname') || '');
+  const [nicknameReady, setNicknameReady] = useState(
+    () => !!localStorage.getItem('movesync_nickname')
+  );
+  const [nicknameInput, setNicknameInput] = useState('');
 
   const applyRoomUpdate = useCallback((data) => {
     setFen(data.fen);
@@ -49,6 +54,7 @@ export default function GamePage() {
   }, []);
 
   useEffect(() => {
+    if (!nicknameReady) return;
     setConnected(false);
 
     function doJoin() {
@@ -108,7 +114,7 @@ export default function GamePage() {
       socket.off('rematch');
       socket.disconnect();
     };
-  }, [roomId, navigate, applyRoomUpdate, nickname]);
+  }, [roomId, navigate, applyRoomUpdate, nickname, nicknameReady]);
 
   function onDrop(sourceSquare, targetSquare, piece) {
     if (myColor === 'spectator') return false;
@@ -144,6 +150,40 @@ export default function GamePage() {
   const boardOrientation = myColor === 'black' ? 'black' : 'white';
   const isMyTurn = myColor === turn && !gameOver;
   const isSpectator = myColor === 'spectator';
+
+  if (!nicknameReady) {
+    return (
+      <div className="nickname-gate">
+        <div className="nickname-gate-card">
+          <div className="home-logo">♟</div>
+          <h2>Join Room <span className="gate-room-code">{roomId}</span></h2>
+          <p className="home-sub">Enter a nickname before joining</p>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const name = nicknameInput.trim();
+              localStorage.setItem('movesync_nickname', name);
+              setNickname(name);
+              setNicknameReady(true);
+            }}
+            className="gate-form"
+          >
+            <input
+              className="input"
+              placeholder="Your nickname (optional)"
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value)}
+              maxLength={24}
+              autoFocus
+            />
+            <button className="btn btn-primary" type="submit">
+              Join Game
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (!connected) {
     return (

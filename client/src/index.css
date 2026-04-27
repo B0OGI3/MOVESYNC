@@ -356,6 +356,43 @@ input  { font-family: inherit; }
 /* ─── Nickname row (HomePage) ─────────────────────────────── */
 .nickname-row { width: 100%; }
 
+/* ─── Nickname Gate (direct link join) ───────────────────── */
+.nickname-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.nickname-gate-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.4);
+  text-align: center;
+}
+
+.gate-room-code {
+  color: var(--accent);
+  letter-spacing: 2px;
+  font-size: 18px;
+}
+
+.gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
 /* ─── Chat Panel ─────────────────────────────────────────── */
 .chat-panel {
   background: var(--surface);

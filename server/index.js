@@ -196,6 +196,7 @@ io.on('connection', (socket) => {
   });
 });
 
+app.get('/', (_, res) => res.send('MoveSync server is running.'));
 app.get('/health', (_, res) => res.json({ ok: true }));
 
 server.listen(PORT, () => {

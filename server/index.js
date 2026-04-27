@@ -8,14 +8,26 @@ const { Chess } = require('chess.js');
 const app = express();
 const server = http.createServer(app);
 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: CLIENT_URL }));
+const allowedOrigins = [
+  'http://localhost:5173',
+  ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map((s) => s.trim()) : []),
+];
+
+function originAllowed(origin, callback) {
+  if (!origin) return callback(null, true);
+  if (allowedOrigins.some((o) => origin === o || origin.endsWith('.vercel.app'))) {
+    return callback(null, true);
+  }
+  callback(new Error('Not allowed by CORS'));
+}
+
+app.use(cors({ origin: originAllowed }));
 app.use(express.json());
 
 const io = new Server(server, {
-  cors: { origin: CLIENT_URL, methods: ['GET', 'POST'] },
+  cors: { origin: originAllowed, methods: ['GET', 'POST'] },
 });
 
 // rooms[roomId] = { chess, players: [{id, color}], spectators: [id], history: [] }

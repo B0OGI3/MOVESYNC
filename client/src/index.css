@@ -425,6 +425,21 @@ input  { font-family: inherit; }
 
 .chat-empty { font-size: 13px; color: var(--text-dim); }
 
+.role-dot {
+  display: inline-block;
+  border-radius: 50%;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.my-role-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
 .chat-msg {
   display: flex;
   flex-wrap: wrap;

@@ -7,7 +7,7 @@ import ReactionBar from '../components/ReactionBar';
 import ReactionBurst from '../components/ReactionBurst';
 import MoveHistory from '../components/MoveHistory';
 import CapturedPieces from '../components/CapturedPieces';
-import ChatPanel from '../components/ChatPanel';
+import ChatPanel, { RoleDot } from '../components/ChatPanel';
 
 function computeCaptured(fen) {
   const chess = new Chess(fen);
@@ -203,6 +203,12 @@ export default function GamePage() {
           <span className="room-code">Room: <strong>{roomId}</strong></span>
           <button className="btn-copy" onClick={copyLink} title="Copy invite link">🔗 Copy Link</button>
         </div>
+        {myColor && (
+          <div className="my-role-badge">
+            <RoleDot role={myColor} size={10} />
+            <span>{nickname || myColor}</span>
+          </div>
+        )}
         <div className="spectator-badge">👁 {spectatorCount} watching</div>
       </header>
 

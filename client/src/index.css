@@ -301,7 +301,7 @@ input  { font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: 220px;
+  width: 260px;
   flex-shrink: 0;
 }
 
@@ -353,11 +353,90 @@ input  { font-family: inherit; }
 .move-white { color: #e0ddd8; font-weight: 500; }
 .move-black { color: #9090aa; }
 
+/* ─── Nickname row (HomePage) ─────────────────────────────── */
+.nickname-row { width: 100%; }
+
+/* ─── Chat Panel ─────────────────────────────────────────── */
+.chat-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 220px;
+  max-height: 340px;
+}
+
+.chat-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.chat-empty { font-size: 13px; color: var(--text-dim); }
+
+.chat-msg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.chat-name {
+  font-weight: 600;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.chat-name::after { content: ':'; }
+
+.chat-text {
+  color: var(--text);
+  word-break: break-word;
+  flex: 1;
+}
+
+.chat-ts {
+  color: var(--text-dim);
+  font-size: 10px;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.chat-form {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-input { flex: 1; font-size: 13px; padding: 7px 10px; }
+
+.chat-send {
+  padding: 7px 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
 /* ─── Responsive ─────────────────────────────────────────── */
 @media (max-width: 700px) {
   .game-layout { gap: 16px; padding: 12px; }
   .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; }
   .move-history { max-height: 160px; min-height: unset; flex: 1 1 200px; }
+  .chat-panel { max-height: 200px; min-height: unset; flex: 1 1 200px; }
   .rematch-btn { flex: 1 1 140px; }
   .home-card { padding: 32px 20px; }
   .game-header { padding: 10px 12px; }

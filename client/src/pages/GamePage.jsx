@@ -7,8 +7,7 @@ import ReactionBar from '../components/ReactionBar';
 import ReactionBurst from '../components/ReactionBurst';
 import MoveHistory from '../components/MoveHistory';
 import CapturedPieces from '../components/CapturedPieces';
-
-const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+import ChatPanel from '../components/ChatPanel';
 
 function computeCaptured(fen) {
   const chess = new Chess(fen);
@@ -30,20 +29,20 @@ export default function GamePage() {
   const [turn, setTurn] = useState('white');
   const [history, setHistory] = useState([]);
   const [spectatorCount, setSpectatorCount] = useState(0);
-  const [playerCount, setPlayerCount] = useState(0);
   const [gameOver, setGameOver] = useState(null);
   const [waiting, setWaiting] = useState(false);
   const [reactions, setReactions] = useState([]);
   const [connected, setConnected] = useState(false);
   const [opponentLeft, setOpponentLeft] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
   const reactionTimers = useRef({});
+  const nickname = localStorage.getItem('movesync_nickname') || '';
 
   const applyRoomUpdate = useCallback((data) => {
     setFen(data.fen);
     setTurn(data.turn);
     setHistory(data.history || []);
     setSpectatorCount(data.spectatorCount || 0);
-    setPlayerCount(data.players?.length || 0);
     if (data.isGameOver && data.gameOverReason) {
       setGameOver(data.gameOverReason);
     }
@@ -53,11 +52,12 @@ export default function GamePage() {
     setConnected(false);
 
     function doJoin() {
-      socket.emit('join-room', { roomId }, (res) => {
+      socket.emit('join-room', { roomId, nickname }, (res) => {
         if (res.error) { navigate('/'); return; }
         setMyColor(res.color);
         setConnected(true);
         setWaiting(res.players?.length < 2 && res.color !== 'spectator');
+        setChatMessages(res.chat || []);
         applyRoomUpdate(res);
         if (res.isGameOver) setGameOver(res.gameOverReason);
       });
@@ -77,7 +77,6 @@ export default function GamePage() {
     });
 
     socket.on('game-over', ({ reason }) => setGameOver(reason));
-
     socket.on('player-disconnected', () => setOpponentLeft(true));
 
     socket.on('reaction', (data) => {
@@ -86,11 +85,15 @@ export default function GamePage() {
       setTimeout(() => setReactions((prev) => prev.filter((r) => r.id !== id)), 2500);
     });
 
+    socket.on('chat', (msg) => {
+      setChatMessages((prev) => [...prev, msg]);
+    });
+
     socket.on('rematch', (data) => {
       setGameOver(null);
       setOpponentLeft(false);
       applyRoomUpdate(data);
-      socket.emit('join-room', { roomId }, (res) => {
+      socket.emit('join-room', { roomId, nickname }, (res) => {
         if (!res.error) setMyColor(res.color);
       });
     });
@@ -101,10 +104,11 @@ export default function GamePage() {
       socket.off('game-over');
       socket.off('player-disconnected');
       socket.off('reaction');
+      socket.off('chat');
       socket.off('rematch');
       socket.disconnect();
     };
-  }, [roomId, navigate, applyRoomUpdate]);
+  }, [roomId, navigate, applyRoomUpdate, nickname]);
 
   function onDrop(sourceSquare, targetSquare, piece) {
     if (myColor === 'spectator') return false;
@@ -119,9 +123,7 @@ export default function GamePage() {
     socket.emit(
       'move',
       { from: sourceSquare, to: targetSquare, promotion: isPromotion ? 'q' : undefined },
-      (res) => {
-        if (res.error) console.warn('Move rejected:', res.error);
-      }
+      (res) => { if (res.error) console.warn('Move rejected:', res.error); }
     );
     return true;
   }
@@ -132,10 +134,6 @@ export default function GamePage() {
     if (now - last < 3000) return;
     reactionTimers.current[socket.id] = now;
     socket.emit('reaction', { emoji });
-  }
-
-  function handleRematch() {
-    socket.emit('rematch');
   }
 
   function copyLink() {
@@ -164,14 +162,10 @@ export default function GamePage() {
           <span className="room-code">Room: <strong>{roomId}</strong></span>
           <button className="btn-copy" onClick={copyLink} title="Copy invite link">🔗 Copy Link</button>
         </div>
-        <div className="spectator-badge">
-          👁 {spectatorCount} watching
-        </div>
+        <div className="spectator-badge">👁 {spectatorCount} watching</div>
       </header>
 
-      {isSpectator && (
-        <div className="spectator-banner">👁 You are spectating</div>
-      )}
+      {isSpectator && <div className="spectator-banner">👁 You are spectating</div>}
 
       {waiting && !isSpectator && (
         <div className="waiting-banner">
@@ -221,10 +215,11 @@ export default function GamePage() {
         <aside className="sidebar">
           <MoveHistory history={history} />
           {gameOver && (myColor === 'white' || myColor === 'black') && (
-            <button className="btn btn-primary rematch-btn" onClick={handleRematch}>
+            <button className="btn btn-primary rematch-btn" onClick={() => socket.emit('rematch')}>
               🔄 Rematch
             </button>
           )}
+          <ChatPanel messages={chatMessages} nickname={nickname} />
         </aside>
       </div>
     </div>

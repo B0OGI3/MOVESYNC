@@ -55,22 +55,24 @@ function getGameOverReason(chess) {
 
 io.on('connection', (socket) => {
   // Create room
-  socket.on('create-room', (callback) => {
+  socket.on('create-room', ({ nickname } = {}, callback) => {
     const roomId = crypto.randomUUID().slice(0, 6).toUpperCase();
     rooms[roomId] = {
       chess: new Chess(),
       players: [{ id: socket.id, color: 'white' }],
       spectators: [],
       history: [],
+      chat: [],
     };
     socket.join(roomId);
     socket.data.roomId = roomId;
     socket.data.role = 'white';
+    socket.data.nickname = nickname || 'White';
     callback({ roomId, color: 'white' });
   });
 
   // Join room
-  socket.on('join-room', ({ roomId }, callback) => {
+  socket.on('join-room', ({ roomId, nickname }, callback) => {
     const room = rooms[roomId];
     if (!room) {
       return callback({ error: 'Room not found' });
@@ -82,23 +84,26 @@ io.on('connection', (socket) => {
       socket.join(roomId);
       socket.data.roomId = roomId;
       socket.data.role = existing.color;
-      return callback({ color: existing.color, ...roomSummary(room) });
+      if (nickname) socket.data.nickname = nickname;
+      return callback({ color: existing.color, chat: room.chat, ...roomSummary(room) });
     }
 
     socket.join(roomId);
     socket.data.roomId = roomId;
+    if (nickname) socket.data.nickname = nickname;
 
     if (room.players.length < 2) {
       const color = 'black';
       room.players.push({ id: socket.id, color });
       socket.data.role = color;
-      callback({ color, ...roomSummary(room) });
-      // Notify white that opponent joined
+      if (!socket.data.nickname) socket.data.nickname = 'Black';
+      callback({ color, chat: room.chat, ...roomSummary(room) });
       io.to(roomId).emit('room-update', roomSummary(room));
     } else {
       room.spectators.push(socket.id);
       socket.data.role = 'spectator';
-      callback({ color: 'spectator', ...roomSummary(room) });
+      if (!socket.data.nickname) socket.data.nickname = 'Spectator';
+      callback({ color: 'spectator', chat: room.chat, ...roomSummary(room) });
       io.to(roomId).emit('room-update', roomSummary(room));
     }
   });
@@ -136,6 +141,23 @@ io.on('connection', (socket) => {
     } catch {
       callback({ error: 'Illegal move' });
     }
+  });
+
+  // Chat
+  socket.on('chat', ({ message }) => {
+    const roomId = socket.data.roomId;
+    const room = rooms[roomId];
+    if (!room || !message?.trim()) return;
+    const text = message.trim().slice(0, 200);
+    const entry = {
+      nickname: socket.data.nickname || 'Anonymous',
+      role: socket.data.role,
+      message: text,
+      ts: Date.now(),
+    };
+    room.chat.push(entry);
+    if (room.chat.length > 200) room.chat.shift();
+    io.to(roomId).emit('chat', entry);
   });
 
   // Reaction

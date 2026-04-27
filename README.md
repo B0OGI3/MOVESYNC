@@ -13,7 +13,8 @@ Real-time multiplayer chess with spectator mode, live emoji reactions, and in-ga
 - Automatic board flip for the black player
 - Spectator mode — watch any game live, read-only board
 - Live emoji reaction bar for players and spectators (♟️ 🔥 😬 👑 😂)
-- In-game chat with nicknames and role-coloured names
+- In-game chat with nicknames, role-coloured names, and dot indicators (white / black / spectator)
+- Nickname prompt on direct room links so joiners always set their name before entering
 - Captured pieces display and scrollable move history
 - Game over detection — checkmate, stalemate, draw
 - Rematch button with colour swap
@@ -64,3 +65,7 @@ client/ — React + Vite SPA
 server/
   index.js  — Express + Socket.io, room store, chess.js validation
 ```
+
+## Resume Bullet
+
+> "Built MoveSync, a real-time multiplayer chess app with spectator mode, live emoji reactions, and in-game chat using Socket.io, React, and Node — game state managed server-side with room-based architecture supporting players and live spectators simultaneously"

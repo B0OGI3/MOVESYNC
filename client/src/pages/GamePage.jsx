@@ -38,10 +38,11 @@ export default function GamePage() {
   const reactionTimers = useRef({});
 
   const [nickname, setNickname] = useState(localStorage.getItem('movesync_nickname') || '');
-  const [nicknameReady, setNicknameReady] = useState(
-    () => !!localStorage.getItem('movesync_nickname')
+  // Only skip the gate if the socket is already connected (came through HomePage)
+  const [nicknameReady, setNicknameReady] = useState(() => socket.connected);
+  const [nicknameInput, setNicknameInput] = useState(
+    localStorage.getItem('movesync_nickname') || ''
   );
-  const [nicknameInput, setNicknameInput] = useState('');
 
   const applyRoomUpdate = useCallback((data) => {
     setFen(data.fen);

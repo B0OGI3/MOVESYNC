@@ -46,6 +46,11 @@ export default function GamePage() {
   );
 
   const historyRef = useRef([]);
+  // Refs so onDrop always reads current values regardless of render timing
+  const fenRef      = useRef('start');
+  const myColorRef  = useRef(null);
+  const turnRef     = useRef('white');
+  const gameOverRef = useRef(null);
 
   const applyRoomUpdate = useCallback((data, silent = false) => {
     const newHistory = data.history || [];
@@ -62,11 +67,14 @@ export default function GamePage() {
       }
     }
     historyRef.current = newHistory;
+    fenRef.current     = data.fen;
+    turnRef.current    = data.turn;
     setFen(data.fen);
     setTurn(data.turn);
     setHistory(newHistory);
     setSpectatorCount(data.spectatorCount || 0);
     if (data.isGameOver && data.gameOverReason) {
+      gameOverRef.current = data.gameOverReason;
       setGameOver(data.gameOverReason);
     }
   }, []);
@@ -78,6 +86,7 @@ export default function GamePage() {
     function doJoin() {
       socket.emit('join-room', { roomId, nickname }, (res) => {
         if (res.error) { navigate('/'); return; }
+        myColorRef.current = res.color;
         setMyColor(res.color);
         setConnected(true);
         setWaiting(res.players?.length < 2 && res.color !== 'spectator');
@@ -101,8 +110,9 @@ export default function GamePage() {
     });
 
     socket.on('game-over', ({ reason, winner }) => {
+      gameOverRef.current = reason;
       setGameOver(reason);
-      playGameOver(winner === myColor);
+      playGameOver(winner === myColorRef.current);
     });
     socket.on('player-disconnected', () => setOpponentLeft(true));
 
@@ -121,7 +131,7 @@ export default function GamePage() {
       setOpponentLeft(false);
       applyRoomUpdate(data);
       socket.emit('join-room', { roomId, nickname }, (res) => {
-        if (!res.error) setMyColor(res.color);
+        if (!res.error) { myColorRef.current = res.color; setMyColor(res.color); }
       });
     });
 
@@ -137,20 +147,25 @@ export default function GamePage() {
     };
   }, [roomId, navigate, applyRoomUpdate, nickname, nicknameReady]);
 
-  function onDrop(sourceSquare, targetSquare, piece) {
-    if (myColor === 'spectator') return false;
-    if (myColor !== turn) return false;
-    if (gameOver) return false;
+  function onDrop(sourceSquare, targetSquare) {
+    const color    = myColorRef.current;
+    const curTurn  = turnRef.current;
+    const curFen   = fenRef.current;
+    const isOver   = gameOverRef.current;
 
-    const isPromotion =
-      piece?.toLowerCase().includes('p') &&
-      ((targetSquare[1] === '8' && myColor === 'white') ||
-        (targetSquare[1] === '1' && myColor === 'black'));
+    if (!color || color === 'spectator') return false;
+    if (color !== curTurn) return false;
+    if (isOver) return false;
+
+    // Validate locally — if chess.js rejects it, snap back immediately
+    const chess = new Chess(curFen);
+    const move = chess.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+    if (!move) return false;
 
     socket.emit(
       'move',
-      { from: sourceSquare, to: targetSquare, promotion: isPromotion ? 'q' : undefined },
-      (res) => { if (res.error) console.warn('Move rejected:', res.error); }
+      { from: sourceSquare, to: targetSquare, promotion: move.promotion || undefined },
+      (res) => { if (res.error) console.warn('Move rejected by server:', res.error); }
     );
     return true;
   }

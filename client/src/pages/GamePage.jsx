@@ -11,14 +11,19 @@ import ChatPanel, { RoleDot } from '../components/ChatPanel';
 import { playMove, playCapture, playCheck, playGameOver } from '../sounds';
 
 function computeCaptured(fen) {
-  const chess = new Chess(fen);
-  const board = chess.board().flat().filter(Boolean);
-  const counts = { w: { p:8, n:2, b:2, r:2, q:1 }, b: { p:8, n:2, b:2, r:2, q:1 } };
-  board.forEach(({ type, color }) => { if (counts[color][type] !== undefined) counts[color][type]--; });
-  return {
-    white: Object.entries(counts.b).flatMap(([t, n]) => Array(n).fill({ type: t, color: 'b' })),
-    black: Object.entries(counts.w).flatMap(([t, n]) => Array(n).fill({ type: t, color: 'w' })),
-  };
+  try {
+    const chess = new Chess(fen);
+    const board = chess.board().flat().filter(Boolean);
+    const counts = { w: { p:8, n:2, b:2, r:2, q:1 }, b: { p:8, n:2, b:2, r:2, q:1 } };
+    board.forEach(({ type, color }) => { if (counts[color][type] !== undefined) counts[color][type]--; });
+    return {
+      // clamp to 0 — promotions can push counts negative
+      white: Object.entries(counts.b).flatMap(([t, n]) => Array(Math.max(0, n)).fill({ type: t, color: 'b' })),
+      black: Object.entries(counts.w).flatMap(([t, n]) => Array(Math.max(0, n)).fill({ type: t, color: 'w' })),
+    };
+  } catch {
+    return { white: [], black: [] };
+  }
 }
 
 export default function GamePage() {
@@ -56,13 +61,12 @@ export default function GamePage() {
     const newHistory = data.history || [];
     if (!silent && newHistory.length > historyRef.current.length) {
       const lastSan = newHistory[newHistory.length - 1] || '';
-      if (lastSan.includes('#')) {
-        playGameOver(null);
-      } else if (lastSan.includes('+')) {
+      // game-over sound is handled exclusively by the game-over socket event
+      if (lastSan.includes('+')) {
         playCheck();
       } else if (lastSan.includes('x')) {
         playCapture();
-      } else {
+      } else if (!lastSan.includes('#')) {
         playMove();
       }
     }

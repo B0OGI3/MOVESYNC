@@ -8,6 +8,7 @@ import ReactionBurst from '../components/ReactionBurst';
 import MoveHistory from '../components/MoveHistory';
 import CapturedPieces from '../components/CapturedPieces';
 import ChatPanel, { RoleDot } from '../components/ChatPanel';
+import { playMove, playCapture, playCheck, playGameOver } from '../sounds';
 
 function computeCaptured(fen) {
   const chess = new Chess(fen);
@@ -44,10 +45,26 @@ export default function GamePage() {
     localStorage.getItem('movesync_nickname') || ''
   );
 
-  const applyRoomUpdate = useCallback((data) => {
+  const historyRef = useRef([]);
+
+  const applyRoomUpdate = useCallback((data, silent = false) => {
+    const newHistory = data.history || [];
+    if (!silent && newHistory.length > historyRef.current.length) {
+      const lastSan = newHistory[newHistory.length - 1] || '';
+      if (lastSan.includes('#')) {
+        playGameOver(null);
+      } else if (lastSan.includes('+')) {
+        playCheck();
+      } else if (lastSan.includes('x')) {
+        playCapture();
+      } else {
+        playMove();
+      }
+    }
+    historyRef.current = newHistory;
     setFen(data.fen);
     setTurn(data.turn);
-    setHistory(data.history || []);
+    setHistory(newHistory);
     setSpectatorCount(data.spectatorCount || 0);
     if (data.isGameOver && data.gameOverReason) {
       setGameOver(data.gameOverReason);
@@ -65,7 +82,7 @@ export default function GamePage() {
         setConnected(true);
         setWaiting(res.players?.length < 2 && res.color !== 'spectator');
         setChatMessages(res.chat || []);
-        applyRoomUpdate(res);
+        applyRoomUpdate(res, true);
         if (res.isGameOver) setGameOver(res.gameOverReason);
       });
     }
@@ -83,7 +100,10 @@ export default function GamePage() {
       setOpponentLeft(false);
     });
 
-    socket.on('game-over', ({ reason }) => setGameOver(reason));
+    socket.on('game-over', ({ reason, winner }) => {
+      setGameOver(reason);
+      playGameOver(winner === myColor);
+    });
     socket.on('player-disconnected', () => setOpponentLeft(true));
 
     socket.on('reaction', (data) => {

@@ -191,6 +191,42 @@ export default function GamePage() {
   const isMyTurn = myColor === turn && !gameOver;
   const isSpectator = myColor === 'spectator';
 
+  // Check indicator — find the king square of the side in check
+  let checkSquareStyles = {};
+  try {
+    if (fen && fen !== 'start' && !gameOver) {
+      const chessCheck = new Chess(fen);
+      if (chessCheck.inCheck()) {
+        const color = chessCheck.turn();
+        const files = 'abcdefgh';
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const piece = chessCheck.board()[r][c];
+            if (piece?.type === 'k' && piece.color === color) {
+              checkSquareStyles[files[c] + (8 - r)] = {
+                background: 'radial-gradient(circle, rgba(220,50,50,0.9) 0%, rgba(220,50,50,0.3) 70%, transparent 100%)',
+              };
+            }
+          }
+        }
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Game over outcome from this player's perspective
+  const gameOverTitle = (() => {
+    if (!gameOver) return null;
+    if (isSpectator) return gameOver === 'checkmate' ? 'Checkmate' : gameOver === 'stalemate' ? 'Stalemate' : 'Draw';
+    if (gameOver !== 'checkmate') return gameOver === 'stalemate' ? 'Stalemate' : 'Draw';
+    // In checkmate the losing side is the one whose turn it still is in the final FEN
+    try {
+      const finalChess = new Chess(fen);
+      const loserColor = finalChess.turn() === 'w' ? 'white' : 'black';
+      if (myColor === loserColor) return 'You Lose';
+      return 'You Win';
+    } catch { return 'Game Over'; }
+  })();
+
   if (!nicknameReady) {
     return (
       <div className="nickname-gate">
@@ -275,24 +311,43 @@ export default function GamePage() {
               onPieceDrop={onDrop}
               boardOrientation={boardOrientation}
               arePiecesDraggable={isMyTurn && !isSpectator}
+              customSquareStyles={checkSquareStyles}
               customBoardStyle={{ borderRadius: '8px', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
             />
+            {gameOver && (
+              <div className="game-over-overlay">
+                <div className="game-over-card">
+                  <div className="game-over-icon">
+                    {gameOverTitle === 'You Win'  ? '🏆' :
+                     gameOverTitle === 'You Lose' ? '😞' : '🤝'}
+                  </div>
+                  <div className="game-over-title">{gameOverTitle}</div>
+                  <div className="game-over-sub">
+                    {gameOver === 'checkmate' ? 'by checkmate' :
+                     gameOver === 'stalemate' ? 'by stalemate' : 'by draw'}
+                  </div>
+                  {!isSpectator && (
+                    <button className="btn btn-primary" onClick={() => socket.emit('rematch')}>
+                      🔄 Rematch
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <CapturedPieces pieces={boardOrientation === 'white' ? captured.black : captured.white} color="mine" />
 
           <div className="turn-indicator">
-            {gameOver ? (
-              <span className="game-over-label">
-                {gameOver === 'checkmate' ? '♟ Checkmate!' : gameOver === 'stalemate' ? '½ Stalemate' : '½ Draw'}
-              </span>
-            ) : waiting ? (
+            {waiting ? (
               <span className="waiting-label">Waiting for opponent…</span>
-            ) : (
+            ) : !gameOver && Object.keys(checkSquareStyles).length > 0 ? (
+              <span className="check-label">⚠️ Check!</span>
+            ) : !gameOver ? (
               <span className={isMyTurn ? 'your-turn' : 'their-turn'}>
                 {isMyTurn ? '✅ Your turn' : `⏳ ${turn.charAt(0).toUpperCase() + turn.slice(1)}'s turn`}
               </span>
-            )}
+            ) : null}
           </div>
 
           <ReactionBar onReact={handleReaction} />
@@ -300,11 +355,6 @@ export default function GamePage() {
 
         <aside className="sidebar">
           <MoveHistory history={history} />
-          {gameOver && (myColor === 'white' || myColor === 'black') && (
-            <button className="btn btn-primary rematch-btn" onClick={() => socket.emit('rematch')}>
-              🔄 Rematch
-            </button>
-          )}
           <ChatPanel messages={chatMessages} nickname={nickname} />
         </aside>
       </div>

@@ -233,10 +233,41 @@ input  { font-family: inherit; }
   padding: 6px 0;
   min-height: 28px;
 }
-.your-turn  { color: var(--accent2); }
-.their-turn { color: var(--text-dim); }
+.your-turn    { color: var(--accent2); }
+.their-turn   { color: var(--text-dim); }
 .waiting-label { color: #6b9cf4; }
-.game-over-label { color: #f0c060; font-size: 16px; }
+.check-label  { color: #f05050; animation: pulse-check .6s ease-in-out infinite alternate; }
+@keyframes pulse-check { from { opacity: 1; } to { opacity: .5; } }
+
+/* ─── Game Over Overlay ──────────────────────────────────── */
+.game-over-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.game-over-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 32px 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+
+.game-over-icon  { font-size: 52px; line-height: 1; }
+.game-over-title { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -.5px; }
+.game-over-sub   { font-size: 13px; color: var(--text-dim); margin-bottom: 4px; }
 
 /* ─── Captured Pieces ────────────────────────────────────── */
 .captured-row {

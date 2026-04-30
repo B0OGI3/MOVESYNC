@@ -8,7 +8,7 @@ import ReactionBurst from '../components/ReactionBurst';
 import MoveHistory from '../components/MoveHistory';
 import CapturedPieces from '../components/CapturedPieces';
 import ChatPanel, { RoleDot } from '../components/ChatPanel';
-import { playMove, playCapture, playCheck, playGameOver } from '../sounds';
+import { playMove, playCapture, playCheck, playGameOver, playDrawOffer } from '../sounds';
 
 function computeCaptured(fen) {
   try {
@@ -217,6 +217,7 @@ export default function GamePage() {
   function handleDrawOffer() {
     socket.emit('draw-offer');
     setDrawOffered(true);
+    playDrawOffer();
   }
 
   const captured = fen && fen !== 'start' ? computeCaptured(fen) : { white: [], black: [] };

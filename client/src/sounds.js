@@ -51,6 +51,10 @@ function safe(fn) {
 export function playMove()        { safe(() => noise(0.06, 0.18, 1800)); }
 export function playCapture()     { safe(() => { noise(0.12, 0.35, 900); tone(180, 0.12, 0.1, 'triangle'); }); }
 export function playCheck()       { safe(() => { tone(660, 0.08, 0.25, 'sine'); tone(880, 0.12, 0.18, 'sine', 0.07); }); }
+export function playDrawOffer() {
+  safe(() => { tone(440, 0.1, 0.15, 'sine'); tone(528, 0.12, 0.12, 'sine', 0.1); });
+}
+
 export function playGameOver(won) {
   safe(() => {
     if (won === true) {

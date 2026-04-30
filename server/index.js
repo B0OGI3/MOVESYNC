@@ -217,23 +217,34 @@ io.on('connection', (socket) => {
     if (offerId) io.to(offerId).emit('draw-declined');
   });
 
-  // Rematch
-  socket.on('rematch', () => {
+  // Rematch offer
+  socket.on('rematch-offer', () => {
     const roomId = socket.data.roomId;
     const room = rooms[roomId];
     if (!room) return;
+    const color = socket.data.role;
+    if (color !== 'white' && color !== 'black') return;
+    const opponent = room.players.find((p) => p.id !== socket.id);
+    if (!opponent) return;
+    room.rematchOfferedBy = socket.id;
+    io.to(opponent.id).emit('rematch-offer', { from: color });
+  });
+
+  // Rematch accept
+  socket.on('rematch-accept', () => {
+    const roomId = socket.data.roomId;
+    const room = rooms[roomId];
+    if (!room || !room.rematchOfferedBy) return;
 
     room.chess = new Chess();
     room.history = [];
     room.lastMove = null;
     room.drawOfferedBy = null;
-    // Swap colors
+    room.rematchOfferedBy = null;
     room.players = room.players.map((p) => ({
       id: p.id,
       color: p.color === 'white' ? 'black' : 'white',
     }));
-
-    // Update each player's socket.data.role
     room.players.forEach((p) => {
       const s = io.sockets.sockets.get(p.id);
       if (s) s.data.role = p.color;
@@ -241,6 +252,16 @@ io.on('connection', (socket) => {
 
     io.to(roomId).emit('rematch', roomSummary(room));
     io.to(roomId).emit('room-update', roomSummary(room));
+  });
+
+  // Rematch decline
+  socket.on('rematch-decline', () => {
+    const roomId = socket.data.roomId;
+    const room = rooms[roomId];
+    if (!room) return;
+    const offerId = room.rematchOfferedBy;
+    room.rematchOfferedBy = null;
+    if (offerId) io.to(offerId).emit('rematch-declined');
   });
 
   // Disconnect

@@ -48,6 +48,9 @@ export default function GamePage() {
   const [drawOffered, setDrawOffered] = useState(false);
   const [drawDeclined, setDrawDeclined] = useState(false);
   const [resignConfirm, setResignConfirm] = useState(false);
+  const [rematchOffered, setRematchOffered] = useState(false);
+  const [incomingRematch, setIncomingRematch] = useState(false);
+  const [rematchDeclined, setRematchDeclined] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const reactionTimers = useRef({});
 
@@ -138,6 +141,13 @@ export default function GamePage() {
       setDrawDeclined(true);
       setTimeout(() => setDrawDeclined(false), 3000);
     });
+
+    socket.on('rematch-offer', () => setIncomingRematch(true));
+    socket.on('rematch-declined', () => {
+      setRematchOffered(false);
+      setRematchDeclined(true);
+      setTimeout(() => setRematchDeclined(false), 3000);
+    });
     socket.on('player-disconnected', () => setOpponentLeft(true));
 
     socket.on('reaction', (data) => {
@@ -159,6 +169,8 @@ export default function GamePage() {
       setIncomingDraw(false);
       setDrawOffered(false);
       setResignConfirm(false);
+      setRematchOffered(false);
+      setIncomingRematch(false);
       applyRoomUpdate(data);
       socket.emit('join-room', { roomId, nickname }, (res) => {
         if (!res.error) { myColorRef.current = res.color; setMyColor(res.color); }
@@ -175,6 +187,8 @@ export default function GamePage() {
       socket.off('rematch');
       socket.off('draw-offer');
       socket.off('draw-declined');
+      socket.off('rematch-offer');
+      socket.off('rematch-declined');
       socket.disconnect();
     };
   }, [roomId, navigate, applyRoomUpdate, nickname, nicknameReady]);
@@ -399,9 +413,16 @@ export default function GamePage() {
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {!isSpectator && (
-                      <button className="btn btn-primary" onClick={() => socket.emit('rematch')}>
-                        🔄 Rematch
-                      </button>
+                      incomingRematch ? (
+                        <>
+                          <button className="btn btn-primary" onClick={() => { socket.emit('rematch-accept'); setIncomingRematch(false); }}>✅ Accept Rematch</button>
+                          <button className="btn btn-secondary" onClick={() => { socket.emit('rematch-decline'); setIncomingRematch(false); }}>✕ Decline</button>
+                        </>
+                      ) : rematchOffered ? (
+                        <button className="btn btn-secondary" disabled>Rematch offered…</button>
+                      ) : (
+                        <button className="btn btn-primary" onClick={() => { socket.emit('rematch-offer'); setRematchOffered(true); }}>🔄 Rematch</button>
+                      )
                     )}
                     {history.length > 0 && (
                       <button className="btn btn-secondary" onClick={() => setShowAnalysis(true)}>
@@ -409,6 +430,7 @@ export default function GamePage() {
                       </button>
                     )}
                   </div>
+                  {rematchDeclined && <div className="game-over-sub" style={{ color: 'var(--danger)' }}>Rematch declined.</div>}
                 </div>
               </div>
             )}

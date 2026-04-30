@@ -542,6 +542,82 @@ input  { font-family: inherit; }
   flex-shrink: 0;
 }
 
+/* ─── Analysis Panel ─────────────────────────────────────── */
+.analysis-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(560px, 100%);
+}
+
+.analysis-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+}
+.analysis-hint { font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; flex: 1; }
+
+.analysis-board-row { display: flex; gap: 8px; align-items: stretch; }
+
+.eval-bar {
+  width: 16px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.eval-bar-black { background: #3a3a4a; transition: height .4s ease; }
+.eval-bar-white { background: #e0ddd8; transition: height .4s ease; }
+
+.analysis-board { flex: 1; min-width: 0; }
+
+.analysis-score {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -.5px;
+}
+
+.analysis-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.analysis-nav-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  padding: 6px 12px;
+  transition: border-color .15s, color .15s;
+}
+.analysis-nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.analysis-nav-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.analysis-move-num { font-size: 13px; color: var(--text-dim); min-width: 56px; text-align: center; }
+
+.analysis-bestmove {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  min-height: 20px;
+}
+.analysis-bestmove strong { color: var(--accent2); font-family: monospace; font-size: 14px; }
+
 /* ─── Responsive ─────────────────────────────────────────── */
 @media (max-width: 700px) {
   .game-layout { gap: 16px; padding: 12px; }

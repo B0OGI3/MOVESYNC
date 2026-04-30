@@ -8,6 +8,7 @@ import ReactionBurst from '../components/ReactionBurst';
 import MoveHistory from '../components/MoveHistory';
 import CapturedPieces from '../components/CapturedPieces';
 import ChatPanel, { RoleDot } from '../components/ChatPanel';
+import AnalysisPanel from '../components/AnalysisPanel';
 import { playMove, playCapture, playCheck, playGameOver, playDrawOffer } from '../sounds';
 
 function computeCaptured(fen) {
@@ -47,6 +48,7 @@ export default function GamePage() {
   const [drawOffered, setDrawOffered] = useState(false);
   const [drawDeclined, setDrawDeclined] = useState(false);
   const [resignConfirm, setResignConfirm] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
   const reactionTimers = useRef({});
 
   const [nickname, setNickname] = useState(localStorage.getItem('movesync_nickname') || '');
@@ -152,6 +154,7 @@ export default function GamePage() {
       setGameOver(null);
       setGameOverWinner(null);
       setLastMove(null);
+      setShowAnalysis(false);
       setOpponentLeft(false);
       setIncomingDraw(false);
       setDrawOffered(false);
@@ -361,7 +364,14 @@ export default function GamePage() {
       )}
 
       <div className="game-layout">
-        <div className="board-column">
+        {showAnalysis && (
+          <AnalysisPanel
+            history={history}
+            boardOrientation={boardOrientation}
+            onClose={() => setShowAnalysis(false)}
+          />
+        )}
+        <div className="board-column" style={showAnalysis ? { display: 'none' } : {}}>
           <CapturedPieces pieces={boardOrientation === 'white' ? captured.white : captured.black} color="opponent" />
 
           <div className="board-wrap">
@@ -387,11 +397,18 @@ export default function GamePage() {
                      gameOver === 'stalemate' ? 'by stalemate' :
                      gameOver === 'resignation' ? 'by resignation' : 'by draw'}
                   </div>
-                  {!isSpectator && (
-                    <button className="btn btn-primary" onClick={() => socket.emit('rematch')}>
-                      🔄 Rematch
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {!isSpectator && (
+                      <button className="btn btn-primary" onClick={() => socket.emit('rematch')}>
+                        🔄 Rematch
+                      </button>
+                    )}
+                    {history.length > 0 && (
+                      <button className="btn btn-secondary" onClick={() => setShowAnalysis(true)}>
+                        🔍 Analyze
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

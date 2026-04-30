@@ -171,6 +171,50 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Resign
+  socket.on('resign', (callback) => {
+    const roomId = socket.data.roomId;
+    const room = rooms[roomId];
+    if (!room || room.chess.isGameOver()) return callback?.({ error: 'Invalid' });
+    const color = socket.data.role;
+    if (color !== 'white' && color !== 'black') return callback?.({ error: 'Spectators cannot resign' });
+    const winner = color === 'white' ? 'black' : 'white';
+    io.to(roomId).emit('game-over', { reason: 'resignation', winner });
+    callback?.({ ok: true });
+  });
+
+  // Draw offer
+  socket.on('draw-offer', () => {
+    const roomId = socket.data.roomId;
+    const room = rooms[roomId];
+    if (!room || room.chess.isGameOver()) return;
+    const color = socket.data.role;
+    if (color !== 'white' && color !== 'black') return;
+    const opponent = room.players.find((p) => p.id !== socket.id);
+    if (!opponent) return;
+    room.drawOfferedBy = socket.id;
+    io.to(opponent.id).emit('draw-offer', { from: color });
+  });
+
+  // Draw accept
+  socket.on('draw-accept', () => {
+    const roomId = socket.data.roomId;
+    const room = rooms[roomId];
+    if (!room || room.chess.isGameOver() || !room.drawOfferedBy) return;
+    room.drawOfferedBy = null;
+    io.to(roomId).emit('game-over', { reason: 'draw', winner: null });
+  });
+
+  // Draw decline
+  socket.on('draw-decline', () => {
+    const roomId = socket.data.roomId;
+    const room = rooms[roomId];
+    if (!room) return;
+    const offerId = room.drawOfferedBy;
+    room.drawOfferedBy = null;
+    if (offerId) io.to(offerId).emit('draw-declined');
+  });
+
   // Rematch
   socket.on('rematch', () => {
     const roomId = socket.data.roomId;
@@ -179,6 +223,7 @@ io.on('connection', (socket) => {
 
     room.chess = new Chess();
     room.history = [];
+    room.drawOfferedBy = null;
     // Swap colors
     room.players = room.players.map((p) => ({
       id: p.id,

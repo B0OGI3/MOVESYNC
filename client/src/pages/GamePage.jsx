@@ -41,6 +41,11 @@ export default function GamePage() {
   const [connected, setConnected] = useState(false);
   const [opponentLeft, setOpponentLeft] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
+  const [gameOverWinner, setGameOverWinner] = useState(null);
+  const [incomingDraw, setIncomingDraw] = useState(false);
+  const [drawOffered, setDrawOffered] = useState(false);
+  const [drawDeclined, setDrawDeclined] = useState(false);
+  const [resignConfirm, setResignConfirm] = useState(false);
   const reactionTimers = useRef({});
 
   const [nickname, setNickname] = useState(localStorage.getItem('movesync_nickname') || '');
@@ -116,7 +121,18 @@ export default function GamePage() {
     socket.on('game-over', ({ reason, winner }) => {
       gameOverRef.current = reason;
       setGameOver(reason);
+      setGameOverWinner(winner);
+      setIncomingDraw(false);
+      setDrawOffered(false);
+      setResignConfirm(false);
       playGameOver(winner === myColorRef.current);
+    });
+
+    socket.on('draw-offer', () => setIncomingDraw(true));
+    socket.on('draw-declined', () => {
+      setDrawOffered(false);
+      setDrawDeclined(true);
+      setTimeout(() => setDrawDeclined(false), 3000);
     });
     socket.on('player-disconnected', () => setOpponentLeft(true));
 
@@ -132,7 +148,11 @@ export default function GamePage() {
 
     socket.on('rematch', (data) => {
       setGameOver(null);
+      setGameOverWinner(null);
       setOpponentLeft(false);
+      setIncomingDraw(false);
+      setDrawOffered(false);
+      setResignConfirm(false);
       applyRoomUpdate(data);
       socket.emit('join-room', { roomId, nickname }, (res) => {
         if (!res.error) { myColorRef.current = res.color; setMyColor(res.color); }
@@ -147,6 +167,8 @@ export default function GamePage() {
       socket.off('reaction');
       socket.off('chat');
       socket.off('rematch');
+      socket.off('draw-offer');
+      socket.off('draw-declined');
       socket.disconnect();
     };
   }, [roomId, navigate, applyRoomUpdate, nickname, nicknameReady]);
@@ -186,6 +208,17 @@ export default function GamePage() {
     navigator.clipboard.writeText(window.location.href);
   }
 
+  function handleResign() {
+    if (!resignConfirm) { setResignConfirm(true); return; }
+    socket.emit('resign');
+    setResignConfirm(false);
+  }
+
+  function handleDrawOffer() {
+    socket.emit('draw-offer');
+    setDrawOffered(true);
+  }
+
   const captured = fen && fen !== 'start' ? computeCaptured(fen) : { white: [], black: [] };
   const boardOrientation = myColor === 'black' ? 'black' : 'white';
   const isMyTurn = myColor === turn && !gameOver;
@@ -216,9 +249,12 @@ export default function GamePage() {
   // Game over outcome from this player's perspective
   const gameOverTitle = (() => {
     if (!gameOver) return null;
+    if (gameOver === 'resignation') {
+      if (isSpectator) return 'Resignation';
+      return gameOverWinner === myColor ? 'You Win' : 'You Lose';
+    }
     if (isSpectator) return gameOver === 'checkmate' ? 'Checkmate' : gameOver === 'stalemate' ? 'Stalemate' : 'Draw';
     if (gameOver !== 'checkmate') return gameOver === 'stalemate' ? 'Stalemate' : 'Draw';
-    // In checkmate the losing side is the one whose turn it still is in the final FEN
     try {
       const finalChess = new Chess(fen);
       const loserColor = finalChess.turn() === 'w' ? 'white' : 'black';
@@ -300,6 +336,18 @@ export default function GamePage() {
         <div className="notice-banner">⚠️ Your opponent disconnected.</div>
       )}
 
+      {drawDeclined && !gameOver && (
+        <div className="notice-banner">Draw offer declined.</div>
+      )}
+
+      {incomingDraw && !gameOver && (
+        <div className="draw-offer-banner">
+          <span>Your opponent offers a draw</span>
+          <button className="btn btn-primary action-btn" onClick={() => { socket.emit('draw-accept'); setIncomingDraw(false); }}>Accept</button>
+          <button className="btn btn-secondary action-btn" onClick={() => { socket.emit('draw-decline'); setIncomingDraw(false); }}>Decline</button>
+        </div>
+      )}
+
       <div className="game-layout">
         <div className="board-column">
           <CapturedPieces pieces={boardOrientation === 'white' ? captured.white : captured.black} color="opponent" />
@@ -324,7 +372,8 @@ export default function GamePage() {
                   <div className="game-over-title">{gameOverTitle}</div>
                   <div className="game-over-sub">
                     {gameOver === 'checkmate' ? 'by checkmate' :
-                     gameOver === 'stalemate' ? 'by stalemate' : 'by draw'}
+                     gameOver === 'stalemate' ? 'by stalemate' :
+                     gameOver === 'resignation' ? 'by resignation' : 'by draw'}
                   </div>
                   {!isSpectator && (
                     <button className="btn btn-primary" onClick={() => socket.emit('rematch')}>
@@ -349,6 +398,25 @@ export default function GamePage() {
               </span>
             ) : null}
           </div>
+
+          {!isSpectator && !gameOver && !waiting && (
+            <div className="action-bar">
+              {resignConfirm ? (
+                <>
+                  <span className="action-confirm-text">Resign?</span>
+                  <button className="btn btn-danger action-btn" onClick={handleResign}>Yes, resign</button>
+                  <button className="btn btn-secondary action-btn" onClick={() => setResignConfirm(false)}>Cancel</button>
+                </>
+              ) : (
+                <button className="btn btn-secondary action-btn" onClick={() => setResignConfirm(true)}>🏳️ Resign</button>
+              )}
+              {drawOffered ? (
+                <button className="btn btn-secondary action-btn" disabled>Draw offered…</button>
+              ) : (
+                <button className="btn btn-secondary action-btn" onClick={handleDrawOffer}>🤝 Offer Draw</button>
+              )}
+            </div>
+          )}
 
           <ReactionBar onReact={handleReaction} />
         </div>

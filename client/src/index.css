@@ -279,6 +279,34 @@ input  { font-family: inherit; }
 }
 .captured-piece { font-size: 18px; line-height: 1; opacity: .7; }
 
+/* ─── Action Bar (Resign / Draw) ────────────────────────── */
+.action-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  flex-wrap: wrap;
+}
+
+.action-btn { font-size: 13px; padding: 7px 14px; border-radius: 8px; }
+.btn-danger  { background: var(--danger); color: #fff; }
+
+.action-confirm-text { font-size: 13px; color: var(--text-dim); }
+
+.draw-offer-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px 20px;
+  background: #1a2a1a;
+  color: var(--accent2);
+  font-size: 14px;
+  font-weight: 500;
+  flex-wrap: wrap;
+}
+
 /* ─── Reaction Bar ───────────────────────────────────────── */
 .reaction-bar {
   display: flex;

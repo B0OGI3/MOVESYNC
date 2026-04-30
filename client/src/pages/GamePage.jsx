@@ -9,7 +9,7 @@ import MoveHistory from '../components/MoveHistory';
 import CapturedPieces from '../components/CapturedPieces';
 import ChatPanel, { RoleDot } from '../components/ChatPanel';
 import AnalysisPanel from '../components/AnalysisPanel';
-import { playMove, playCapture, playCheck, playGameOver, playDrawOffer } from '../sounds';
+import { playMove, playCapture, playCheck, playGameOver, playDrawOffer, playRematchOffer } from '../sounds';
 
 function computeCaptured(fen) {
   try {
@@ -421,7 +421,7 @@ export default function GamePage() {
                       ) : rematchOffered ? (
                         <button className="btn btn-secondary" disabled>Rematch offered…</button>
                       ) : (
-                        <button className="btn btn-primary" onClick={() => { socket.emit('rematch-offer'); setRematchOffered(true); }}>🔄 Rematch</button>
+                        <button className="btn btn-primary" onClick={() => { socket.emit('rematch-offer'); setRematchOffered(true); playRematchOffer(); }}>🔄 Rematch</button>
                       )
                     )}
                     {history.length > 0 && (

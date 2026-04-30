@@ -55,6 +55,10 @@ export function playDrawOffer() {
   safe(() => { tone(440, 0.1, 0.15, 'sine'); tone(528, 0.12, 0.12, 'sine', 0.1); });
 }
 
+export function playRematchOffer() {
+  safe(() => { tone(528, 0.1, 0.15, 'sine'); tone(660, 0.1, 0.12, 'sine', 0.1); tone(784, 0.14, 0.1, 'sine', 0.2); });
+}
+
 export function playGameOver(won) {
   safe(() => {
     if (won === true) {

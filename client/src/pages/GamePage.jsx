@@ -161,6 +161,7 @@ export default function GamePage() {
     });
 
     socket.on('rematch', (data) => {
+      gameOverRef.current = null;
       setGameOver(null);
       setGameOverWinner(null);
       setLastMove(null);

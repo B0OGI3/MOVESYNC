@@ -265,6 +265,7 @@ io.on('connection', (socket) => {
 
 app.get('/', (_, res) => res.send('MoveSync server is running.'));
 app.get('/health', (_, res) => res.json({ ok: true }));
+app.get('/version', (_, res) => res.json({ v: 2, features: ['resign', 'draw-offer'] }));
 
 server.listen(PORT, () => {
   console.log(`MoveSync server running on port ${PORT}`);

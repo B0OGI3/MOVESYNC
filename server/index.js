@@ -37,6 +37,7 @@ function roomSummary(room) {
   return {
     fen: room.chess.fen(),
     history: room.history,
+    lastMove: room.lastMove || null,
     players: room.players.map((p) => ({ color: p.color })),
     spectatorCount: room.spectators.length,
     turn: room.chess.turn() === 'w' ? 'white' : 'black',
@@ -123,6 +124,7 @@ io.on('connection', (socket) => {
       const move = room.chess.move({ from, to, promotion: promotion || 'q' });
       if (!move) return callback({ error: 'Illegal move' });
 
+      room.lastMove = { from, to };
       room.history.push(move.san);
       const summary = roomSummary(room);
       io.to(roomId).emit('room-update', summary);
@@ -223,6 +225,7 @@ io.on('connection', (socket) => {
 
     room.chess = new Chess();
     room.history = [];
+    room.lastMove = null;
     room.drawOfferedBy = null;
     // Swap colors
     room.players = room.players.map((p) => ({

@@ -34,6 +34,7 @@ export default function GamePage() {
   const [myColor, setMyColor] = useState(null);
   const [turn, setTurn] = useState('white');
   const [history, setHistory] = useState([]);
+  const [lastMove, setLastMove] = useState(null);
   const [spectatorCount, setSpectatorCount] = useState(0);
   const [gameOver, setGameOver] = useState(null);
   const [waiting, setWaiting] = useState(false);
@@ -81,6 +82,7 @@ export default function GamePage() {
     setFen(data.fen);
     setTurn(data.turn);
     setHistory(newHistory);
+    setLastMove(data.lastMove || null);
     setSpectatorCount(data.spectatorCount || 0);
     if (data.isGameOver && data.gameOverReason) {
       gameOverRef.current = data.gameOverReason;
@@ -149,6 +151,7 @@ export default function GamePage() {
     socket.on('rematch', (data) => {
       setGameOver(null);
       setGameOverWinner(null);
+      setLastMove(null);
       setOpponentLeft(false);
       setIncomingDraw(false);
       setDrawOffered(false);
@@ -224,6 +227,14 @@ export default function GamePage() {
   const boardOrientation = myColor === 'black' ? 'black' : 'white';
   const isMyTurn = myColor === turn && !gameOver;
   const isSpectator = myColor === 'spectator';
+
+  // Last move highlight
+  const lastMoveStyles = lastMove
+    ? {
+        [lastMove.from]: { background: 'rgba(255, 210, 0, 0.35)' },
+        [lastMove.to]:   { background: 'rgba(255, 210, 0, 0.55)' },
+      }
+    : {};
 
   // Check indicator — find the king square of the side in check
   let checkSquareStyles = {};
@@ -360,7 +371,7 @@ export default function GamePage() {
               onPieceDrop={onDrop}
               boardOrientation={boardOrientation}
               arePiecesDraggable={isMyTurn && !isSpectator}
-              customSquareStyles={checkSquareStyles}
+              customSquareStyles={{ ...lastMoveStyles, ...checkSquareStyles }}
               customBoardStyle={{ borderRadius: '8px', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}
             />
             {gameOver && (

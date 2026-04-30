@@ -231,8 +231,8 @@ export default function GamePage() {
   // Last move highlight
   const lastMoveStyles = lastMove
     ? {
-        [lastMove.from]: { background: 'rgba(255, 210, 0, 0.35)' },
-        [lastMove.to]:   { background: 'rgba(255, 210, 0, 0.55)' },
+        [lastMove.from]: { background: 'rgba(255, 200, 0, 0.5)' },
+        [lastMove.to]:   { background: 'rgba(255, 200, 0, 0.7)' },
       }
     : {};
 
